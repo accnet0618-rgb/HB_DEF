@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Countdown Sagittario - Tarocchi</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Didot", serif;
+        text-align: center;
+        background: linear-gradient(150deg, #0f0730, #1a0c4d, #2e1f6b);
+        color: #f5eaff;
+        overflow: hidden;
+    }
+
+    .overlay {
+        width: 94%;
+        max-width: 520px;
+        padding: 26px;
+        background: rgba(18, 8, 38, 0.65);
+        border-radius: 18px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 30px rgba(120, 60, 200, 0.25), inset 0 0 18px rgba(80,40,140,0.15);
+        border: 1px solid rgba(200, 150, 255, 0.08);
+    }
+
+    h1 {
+        font-size: 1.3em;
+        letter-spacing: 0.6px;
+        margin: 8px 0 12px 0;
+        line-height: 1.35em;
+        text-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+
+    .sag {
+        font-size: 2.6em;
+        color: #d8c2ff;
+        text-shadow: 0 0 12px #8e5fff;
+        margin-bottom: 6px;
+    }
+
+    #countdown {
+        font-size: 1.9em;
+        font-weight: 600;
+        margin: 18px 0 16px 0;
+        color: #e8ddff;
+        text-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+
+    button {
+        border: none;
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-size: 1.15em;
+        font-family: "Didot", serif;
+        background: linear-gradient(135deg, #6f47c4, #3b2a95);
+        color: white;
+        transition: 0.22s;
+        box-shadow: 0 6px 18px rgba(60,30,120,0.35);
+    }
+
+    button:hover:not(.disabled) {
+        transform: translateY(-3px) scale(1.02);
+    }
+
+    .disabled {
+        background: #555 !important;
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .magic-canvas {
+        width: 100%;
+        height: 260px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        display: block;
+        background: linear-gradient(180deg, rgba(40,10,70,0.15), rgba(10,5,30,0.25));
+        box-shadow: 0 0 30px rgba(80,40,140,0.15);
+    }
+
+    @media (max-width:420px) {
+        .magic-canvas { height: 220px; }
+        h1 { font-size: 1.1em; }
+        #countdown { font-size: 1.6em; }
+        button { font-size: 1.05em; padding: 12px 22px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="overlay card-frame">
+
+    <div class="sag">♐️</div>
+
+<canvas id="magicCanvas" class="magic-canvas" aria-hidden="true"></canvas>
+
+    <h1>Bello tutto, bello anche l'ascendente.<br>Qua tocca aspettare</h1>
+
+    <div id="countdown"></div>
+
+    <button id="openButton" class="disabled" disabled>
+        Una cosa normale mai, lo so.
+    </button>
+
+</div>
+
+<script>
+    const targetDate = new Date("2025-12-19T00:30:00");
+
+    const countdownElement = document.getElementById("countdown");
+    const openButton = document.getElementById("openButton");
+
+    function updateCountdown() {
+        const now = new Date();
+        const diff = targetDate - now;
+
+        if (diff <= 0) {
+            countdownElement.innerHTML = "";
+            openButton.disabled = false;
+            openButton.classList.remove("disabled");
+            openButton.onclick = () => {
+                window.open("HB.pdf", "_blank");
+            };
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        countdownElement.innerHTML = `${days}g ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // --- Particle / "ribes magiche" effect on canvas ---
+    (function(){
+        const canvas = document.getElementById('magicCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let width, height, DPR;
+
+        function resize(){
+            DPR = window.devicePixelRatio || 1;
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+            canvas.width = Math.round(width * DPR);
+            canvas.height = Math.round(height * DPR);
+            ctx.setTransform(DPR,0,0,DPR,0,0);
+        }
+
+        function rand(min,max){ return Math.random()*(max-min)+min }
+
+        function createParticle(){
+            return {
+                x: rand(0,width),
+                y: rand(0,height),
+                vx: rand(-0.15,0.15),
+                vy: rand(-0.3, -0.6),
+                size: rand(2,6),
+                life: rand(80,220),
+                maxLife: 0 | rand(80,220),
+                hue: rand(230,280),
+                glow: rand(6,18)
+            };
+        }
+
+        function initParticles(n){
+            particles = [];
+            for(let i=0;i<n;i++) particles.push(createParticle());
+        }
+
+        function draw(){
+            ctx.clearRect(0,0,width,height);
+            // subtle translucent overlay to create trails
+            ctx.fillStyle = 'rgba(10,6,18,0.12)';
+            ctx.fillRect(0,0,width,height);
+
+            for(let p of particles){
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life++;
+                if(p.y < -20 || p.life > p.maxLife){
+                    // respawn at bottom
+                    Object.assign(p, createParticle());
+                    p.y = height + 10;
+                    p.life = 0;
+                }
+
+                // draw glow
+                const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glow);
+                const hue = Math.floor(p.hue);
+                grd.addColorStop(0, `hsla(${hue},90%,75%,0.95)`);
+                grd.addColorStop(0.4, `hsla(${hue},80%,60%,0.45)`);
+                grd.addColorStop(1, `rgba(20,8,40,0)`);
+                ctx.beginPath();
+                ctx.fillStyle = grd;
+                ctx.arc(p.x, p.y, p.size*2.2, 0, Math.PI*2);
+                ctx.fill();
+
+                // core
+                ctx.beginPath();
+                ctx.fillStyle = `hsla(${hue},90%,85%,0.98)`;
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        function anim(){
+            draw();
+            requestAnimationFrame(anim);
+        }
+
+        function onResize(){
+            resize();
+            initParticles(Math.max(18, Math.round(width/25)));
+        }
+
+        window.addEventListener('resize', onResize);
+        onResize();
+        anim();
+    })();
+</script>
+
+</body>
+</html>
